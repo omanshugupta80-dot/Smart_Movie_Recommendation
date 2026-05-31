@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Movie Recommender</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+
+    <!--
+         PREFERENCE POPUP
+         Shows only on first visit
+         After submit → never shows again (localStorage)
+═ -->
+    <div id="preferencePopup" class="popup-overlay" style="display:none;">
+        <div class="popup-box">
+
+            <h2>👋 Welcome!</h2>
+            <p>Tell us what you love — we'll recommend perfectly for you</p>
+
+            <!-- GENRES -->
+            <div class="popup-group">
+                <label>Select Your Favourite Genres</label>
+                <div class="popup-chips" id="genreChips">
+                    <div class="chip" onclick="toggleChip(this, 'genre')">Action</div>
+                    <div class="chip" onclick="toggleChip(this, 'genre')">Comedy</div>
+                    <div class="chip" onclick="toggleChip(this, 'genre')">Romance</div>
+                    <div class="chip" onclick="toggleChip(this, 'genre')">Horror</div>
+                    <div class="chip" onclick="toggleChip(this, 'genre')">Sci-Fi</div>
+                    <div class="chip" onclick="toggleChip(this, 'genre')">Thriller</div>
+                    <div class="chip" onclick="toggleChip(this, 'genre')">Drama</div>
+                    <div class="chip" onclick="toggleChip(this, 'genre')">Fantasy</div>
+                    <div class="chip" onclick="toggleChip(this, 'genre')">Crime</div>
+                </div>
+            </div>
+
+            <!-- MOODS -->
+            <div class="popup-group">
+                <label>Select Your Favourite Moods</label>
+                <div class="popup-chips" id="moodChips">
+                    <div class="chip" onclick="toggleChip(this, 'mood')">😊 Happy</div>
+                    <div class="chip" onclick="toggleChip(this, 'mood')">😢 Sad</div>
+                    <div class="chip" onclick="toggleChip(this, 'mood')">🏆 Motivational</div>
+                    <div class="chip" onclick="toggleChip(this, 'mood')">💖 Romantic</div>
+                    <div class="chip" onclick="toggleChip(this, 'mood')">😈 Thriller</div>
+                    <div class="chip" onclick="toggleChip(this, 'mood')">🧠 Mind-Blowing</div>
+                </div>
+            </div>
+
+            <!-- CATEGORY -->
+            <div class="popup-group">
+                <label>Select Your Favourite Category</label>
+                <div class="popup-chips" id="categoryChips">
+                    <div class="chip" onclick="toggleChip(this, 'category')">Hollywood</div>
+                    <div class="chip" onclick="toggleChip(this, 'category')">Bollywood</div>
+                    <div class="chip" onclick="toggleChip(this, 'category')">Anime</div>
+                    <div class="chip" onclick="toggleChip(this, 'category')">Korean Cinema</div>
+                    <div class="chip" onclick="toggleChip(this, 'category')">South Indian</div>
+                </div>
+            </div>
+
+            <!-- SUBMIT -->
+            <button class="popup-submit" onclick="savePreferences()">
+                Start Watching →
+            </button>
+
+        </div>
+    </div>
+
+
+    
+    <header>
+        <div class="header-left">
+            <h1>SMART MOVIE RECOMMENDER</h1>
+        </div>
+
+        <div class="header-right">
+            <input
+                type="text"
+                id="searchBar"
+                placeholder="Search movies..."
+            >
+            <button onclick="searchMovie()">Search</button>
+        </div>
+    </header>
+
+
+    
+    <section class="top-controls">
+
+        <!-- LEFT SIDE -->
+        <div class="actor-search">
+            <label>Search by Actor</label>
+
+            <div class="actor-box">
+                <input
+                    type="text"
+                    id="actorSearch"
+                    placeholder="Enter actor name..."
+                >
+                <button onclick="searchByActor()">Search</button>
+            </div>
+        </div>
+
+        <!-- RIGHT SIDE : MOVIE / WEB SERIES SWITCH -->
+        <div class="content-switch">
+            <button class="active"
+                onclick="selectContentType('Movie', this)">
+                Movies
+            </button>
+
+            <button
+                onclick="selectContentType('Series', this)">
+                Web Series
+            </button>
+        </div>
+
+    </section>
+
+
+    
+    <section class="trending-section">
+        <h2>🔥 TOP TRENDING</h2>
+
+        <div class="slider-wrapper">
+
+            <button
+                class="slide-btn left"
+                onclick="slideMovies('trending-slider', -400)">
+                &#10094;
+            </button>
+
+            <div class="trending-slider" id="trending-slider">
+                {% for movie in trending_movies %}
+                <div class="movie-card"
+                    onclick="openTrailer('{{ movie.trailer_url }}')">
+
+                    <img
+                        src="{{ url_for('static', filename='images/' + movie.poster_url) }}"
+                        alt="{{ movie.movie_name }}"
+                    >
+
+                    <h3>{{ movie.movie_name }}</h3>
+                    <p>⭐ {{ movie.rating }}</p>
+
+                </div>
+                {% endfor %}
+            </div>
+
+            <button
+                class="slide-btn right"
+                onclick="slideMovies('trending-slider', 400)">
+                &#10095;
+            </button>
+
+        </div>
+    </section>
+
+
+    
+    <section class="main-content">
+
+        <!-- LEFT PANEL -->
+        <div class="left-panel">
+
+            <!-- FILTER -->
+            <section class="filter-section">
+                <h2>FILTER YOUR PREFERENCES</h2>
+
+                <div class="filter-box">
+
+                    <!-- CATEGORY -->
+                    <select id="category">
+                        <option value="">Select Category</option>
+                        <option value="Hollywood">Hollywood</option>
+                        <option value="Bollywood">Bollywood</option>
+                        <option value="Anime">Anime</option>
+                        <option value="Korean Cinema">Korean Cinema</option>
+                        <option value="South Indian">South Indian</option>
+                    </select>
+
+                    <!-- GENRE -->
+                    <select id="genre">
+                        <option value="">Select Genre</option>
+                        <option value="Action">Action</option>
+                        <option value="Comedy">Comedy</option>
+                        <option value="Romance">Romance</option>
+                        <option value="Horror">Horror</option>
+                        <option value="Sci-Fi">Sci-Fi</option>
+                        <option value="Thriller">Thriller</option>
+                        <option value="Drama">Drama</option>
+                        <option value="Fantasy">Fantasy</option>
+                        <option value="Crime">Crime</option>
+                    </select>
+
+
+                    <button onclick="recommendMovie()">
+                        My Recommend
+                    </button>
+
+                </div>
+            </section>
+
+        </div>
+
+
+        <!-- RIGHT PANEL -->
+        <div class="right-panel">
+
+            <!-- MOOD BASED PICKS -->
+            <section class="mood-section">
+                <h2>😊 MOOD BASED</h2>
+
+                <div class="mood-list">
+
+                    <div onclick="getMoodMovies('Happy')">
+                        😊  Happy
+                    </div>
+
+                    <div onclick="getMoodMovies('Sad')">
+                        😢  Sad
+                    </div>
+
+                    <div onclick="getMoodMovies('Motivational')">
+                        🏆  Motivational
+                    </div>
+
+                    <div onclick="getMoodMovies('Romantic')">
+                        💖  Romantic
+                    </div>
+
+                    <div onclick="getMoodMovies('Thriller')">
+                        😈  Thriller
+                    </div>
+
+                    <div onclick="getMoodMovies('Mind-Blowing')">
+                        🧠  Mind-Blowing
+                    </div>
+
+                </div>
+            </section>
+
+        </div>
+
+    </section>
+
+
+    <!-- RESULTS SECTION
+         movie cards now have 👍 👎 buttons-->
+
+    <section class="results-section">
+        <h2 id="resultTitle">ALL MOVIES/WEB SERIES AVAILABLE</h2>
+
+        <div id="movieResults" class="results-grid">
+
+            {% for movie in movies %}
+            <div class="movie-card">
+
+                <!-- POSTER → click opens trailer -->
+                <img
+                    src="{{ url_for('static', filename='images/' + movie.poster_url) }}"
+                    alt="{{ movie.movie_name }}"
+                    onclick="openTrailer('{{ movie.trailer_url }}')"
+                >
+
+                <h3 onclick="openTrailer('{{ movie.trailer_url }}')">
+                    {{ movie.movie_name }}
+                </h3>
+
+                <p><strong>Type:</strong> {{ movie.content_type }}</p>
+                <p><strong>Category:</strong> {{ movie.category }}</p>
+                <p><strong>Genre:</strong> {{ movie.genre }}</p>
+                <p><strong>Duration:</strong> {{ movie.duration_display }}</p>
+                <p><strong>IMDb:</strong> {{ movie.rating }}</p>
+                <p><strong>OTT:</strong> {{ movie.ott_platform }}</p>
+                <p><strong>Actor:</strong> {{ movie.actor }}</p>
+
+                <!-- LIKE / DISLIKE BUTTONS -->
+                <div class="like-dislike">
+                    <button
+                        class="btn-like"
+                        onclick="trackBehavior({{ movie.id }}, 'liked')">
+                        👍 Like
+                    </button>
+                    <button
+                        class="btn-dislike"
+                        onclick="trackBehavior({{ movie.id }}, 'disliked')">
+                        👎 Dislike
+                    </button>
+                </div>
+
+            </div>
+            {% endfor %}
+
+        </div>
+    </section>
+
+
+    <!-- SIDE BANNER red colour -->
+    <div class="side-banner">
+        Smart Movie Discovery
+    </div>
+
+
+    <!-- JS connectivity -->
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+
+</body>
+</html>
